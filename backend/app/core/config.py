@@ -76,7 +76,9 @@ class Settings(BaseSettings):
 
     # Google OAuth Configuration
     GOOGLE_CLIENT_ID: str = Field(default="", description="Google OAuth Client ID")
-    GOOGLE_CLIENT_SECRET: str = Field(default="", description="Google OAuth Client Secret")
+    GOOGLE_CLIENT_SECRET: str = Field(
+        default="", description="Google OAuth Client Secret"
+    )
     GOOGLE_CONF_URL: str = Field(
         default="https://accounts.google.com/.well-known/openid-configuration",
         description="Google OpenID configuration URL",

@@ -9,16 +9,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from models.base import Base
+from app.models.base import Base
 
 
 class QuarterlyResult(Base):
     __tablename__ = "quarterly_results"
 
     result_id = Column(Integer, primary_key=True, autoincrement=True)
-    company_id = Column(
-        Integer, ForeignKey("companies.company_id"), nullable=False
-    )
+    company_id = Column(Integer, ForeignKey("companies.company_id"), nullable=False)
     quarter = Column(String(20), nullable=False)
     period_end_date = Column(Date, nullable=False)
     revenue = Column(Numeric(15, 2))

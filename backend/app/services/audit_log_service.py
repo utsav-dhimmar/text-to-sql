@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.user import AuditLog
+from app.models.user import AuditLog
 
 
 class AuditLogService:
@@ -19,7 +19,10 @@ class AuditLogService:
         self.db = db
 
     async def log_action(
-        self, actor_id: uuid.UUID, action: str, target_id: Optional[uuid.UUID] = None
+        self,
+        actor_id: uuid.UUID,
+        action: str,
+        target_id: Optional[uuid.UUID] = None,
     ) -> AuditLog:
         log = AuditLog(actor_id=actor_id, action=action, target_id=target_id)
         self.db.add(log)

@@ -3,10 +3,10 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.jwt import decode_token, oauth2_scheme
-from db.database import get_db
-from schemas.auth import UserResponse
-from services.user_service import UserService
+from app.core.jwt import decode_token, oauth2_scheme
+from app.db.database import get_db
+from app.schemas.auth import UserResponse
+from app.services.user_service import UserService
 
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 

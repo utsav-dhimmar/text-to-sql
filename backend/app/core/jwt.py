@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import ExpiredSignatureError, InvalidTokenError
 
-from core.config import get_settings
+from app.core.config import get_settings
 
 settings = get_settings()
 
@@ -26,14 +26,22 @@ def create_access_token(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
-    to_encode: dict[str, Any] = {"exp": expire, "sub": str(subject), "type": "access"}
+    to_encode: dict[str, Any] = {
+        "exp": expire,
+        "sub": str(subject),
+        "type": "access",
+    }
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
 
 def create_refresh_token(subject: str | UUID) -> str:
     expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode: dict[str, Any] = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    to_encode: dict[str, Any] = {
+        "exp": expire,
+        "sub": str(subject),
+        "type": "refresh",
+    }
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
