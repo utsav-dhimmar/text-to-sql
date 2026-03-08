@@ -1,16 +1,22 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RiGithubFill, RiGoogleFill } from "@remixicon/react";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { AuthLayout } from "../../components/auth/AuthLayout";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { registerSchema, type RegisterFormValues } from "../../schema/user.schema";
+import {
+  registerSchema,
+  type RegisterFormValues,
+} from "../../schema/user.schema";
+import { AuthService } from "../../apis/service/auth.service";
 
 export default function RegisterPage() {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -21,24 +27,35 @@ export default function RegisterPage() {
   });
 
   const onSubmit = (data: RegisterFormValues) => {
+    setError(null);
     startTransition(async () => {
-      console.log("Register data:", data);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        console.log("Registering user:", data.email);
+        await AuthService.register(data);
+        // On success, redirect to login
+        navigate("/login");
+      } catch (err: any) {
+        console.error("Registration failed:", err);
+        setError(
+          err.response?.data?.detail ||
+            "Registration failed. Please try again.",
+        );
+      }
     });
   };
 
   return (
     <AuthLayout title="Create an account">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Input
-          id="name"
-          type="text"
-          label="Full name"
-          placeholder="Your Name"
-          {...register("name")}
-          error={errors.name?.message}
-        />
+      {error && (
+        <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+          {error}
+        </div>
+      )}
 
+      <form
+        onSubmit={handleSubmit(onSubmit, (e) => console.log(e))}
+        className="space-y-6"
+      >
         <Input
           id="email"
           type="email"
@@ -68,23 +85,38 @@ export default function RegisterPage() {
             <div className="w-full border-t border-neutral-200" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-neutral-500">Or sign up with</span>
+            <span className="px-2 bg-white dark:bg-gray-900 text-neutral-500 dark:text-gray-400">
+              Or sign up with
+            </span>
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button type="button" variant="outline" icon={<RiGithubFill className="h-5 w-5" />}>
+          <Button
+            type="button"
+            variant="outline"
+            icon={<RiGithubFill className="h-5 w-5" />}
+            onClick={() => (window.location.href = "/api/auth/google/login")} // Redirect to google login
+          >
             GitHub
           </Button>
-          <Button type="button" variant="outline" icon={<RiGoogleFill className="h-5 w-5" />}>
+          <Button
+            type="button"
+            variant="outline"
+            icon={<RiGoogleFill className="h-5 w-5" />}
+            onClick={() => (window.location.href = "/api/auth/google/login")}
+          >
             Google
           </Button>
         </div>
       </div>
 
-      <p className="mt-8 text-center text-sm text-neutral-600">
+      <p className="mt-8 text-center text-sm text-neutral-600 dark:text-gray-400">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+        <Link
+          to="/login"
+          className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+        >
           Sign in
         </Link>
       </p>
