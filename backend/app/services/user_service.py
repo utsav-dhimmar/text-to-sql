@@ -2,17 +2,15 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import hash_password, verify_password
-from models.user import User, UserRole, UserStatus
+from app.core.security import hash_password, verify_password
+from app.models.user import User, UserRole, UserStatus
 
 
 class UserService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_user(
-        self, email: str, password: str, role: str = "user"
-    ) -> User:
+    async def create_user(self, email: str, password: str, role: str = "user") -> User:
         password_hash = hash_password(password)
         user = User(
             email=email,
@@ -101,9 +99,7 @@ class UserService:
         return result.scalar_one_or_none()
 
     async def get_all_users(self) -> list[User]:
-        result = await self.db.execute(
-            select(User).order_by(User.created_at.desc())
-        )
+        result = await self.db.execute(select(User).order_by(User.created_at.desc()))
         return list(result.scalars().all())
 
     async def update_role(self, user_id: str, new_role: str) -> bool:

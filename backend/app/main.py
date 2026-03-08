@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
-from api.auth import router as auth_router
-from core.config import get_settings
-from db.database import engine
-from models import Base
+from .api.auth import router as auth_router
+from .core.config import get_settings
+from .db.database import engine
+from .models import Base
 
 app = FastAPI(title="Text-to-SQL API", version="1.0.0")
 settings = get_settings()
