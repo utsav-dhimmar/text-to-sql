@@ -41,3 +41,6 @@ uv run uvicorn main:app --reload
 - **Pydantic** - Data validation
 - **LangChain / DSPy** - LLM integrations
   <!--this is just comment-->
+
+
+for run `uvicorn app.main:app --reload`

@@ -1,17 +1,25 @@
 from typing import Annotated
+
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi import (
+    APIRouter,
+    Cookie,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
 from fastapi.responses import RedirectResponse
 
-from core.config import get_settings
-from core.jwt import (
+from app.core.config import get_settings
+from app.core.jwt import (
     create_access_token,
     create_refresh_token,
     verify_token_type,
 )
-from dependencies import CurrentUser, DBSession, UserServiceDep
-from models.user import UserRole
-from schemas.auth import (
+from app.dependencies import CurrentUser, DBSession, UserServiceDep
+from app.models.user import UserRole
+from app.schemas.auth import (
     MessageResponse,
     TokenResponse,
     UserCreate,
