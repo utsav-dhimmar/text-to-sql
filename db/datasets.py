@@ -1,138 +1,88 @@
 # ============================================================
 # db/datasets.py
 # All database operations for the datasets table
+# Uses SQLAlchemy ORM
 #
 # Table:
 #   datasets (id, name, source, uploaded_by, table_name,
 #             row_count, status, created_at)
 # ============================================================
 
-import psycopg2
-import psycopg2.extras
-from db.connection import get_conn
+from sqlalchemy.orm import Session
+from db.models import Dataset
 
 
-# Status constants
+# ── Status Constants ─────────────────────────────────────────
 STATUS_PROCESSING = "processing"
 STATUS_READY      = "ready"
 STATUS_ERROR      = "error"
 
 
-def get_all_datasets() -> list:
-    """
-    Fetch all datasets with uploader email.
-    """
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute("""
-            SELECT
-                d.id,
-                d.name,
-                d.source,
-                d.table_name,
-                d.row_count,
-                d.status,
-                d.created_at,
-                u.email AS uploaded_by_email
-            FROM datasets d
-            LEFT JOIN users u ON u.id = d.uploaded_by
-            ORDER BY d.created_at DESC
-        """)
-        return [dict(r) for r in cur.fetchall()]
-    finally:
-        cur.close()
-        conn.close()
+def get_all_datasets(db: Session) -> list[Dataset]:
+    """Fetch all datasets ordered by creation date."""
+    return db.query(Dataset).order_by(Dataset.created_at.desc()).all()
 
 
-def get_dataset_by_id(dataset_id: str) -> dict | None:
+def get_dataset_by_id(db: Session, dataset_id: str) -> Dataset | None:
     """Fetch a single dataset by UUID. Returns None if not found."""
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute("""
-            SELECT id, name, source, table_name, row_count, status, created_at
-            FROM datasets
-            WHERE id = %s
-        """, (dataset_id,))
-        row = cur.fetchone()
-        return dict(row) if row else None
-    finally:
-        cur.close()
-        conn.close()
+    return db.query(Dataset).filter(Dataset.id == dataset_id).first()
 
 
 def create_dataset(
+    db:          Session,
     name:        str,
     table_name:  str,
-    source:      str  = "manual upload",
-    uploaded_by: str  = None,
-    row_count:   int  = 0,
-) -> dict:
+    source:      str = "manual upload",
+    uploaded_by: str = None,
+    row_count:   int = 0,
+) -> Dataset:
     """
     Register a new dataset.
     Status starts as 'processing' automatically.
     """
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute("""
-            INSERT INTO datasets (name, source, uploaded_by, table_name, row_count, status)
-            VALUES (%s, %s, %s, %s, %s, 'processing')
-            RETURNING id, name, table_name, status, created_at
-        """, (name, source, uploaded_by, table_name, row_count))
-        row = dict(cur.fetchone())
-        conn.commit()
-        return row
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        cur.close()
-        conn.close()
+    dataset = Dataset(
+        name=name,
+        source=source,
+        uploaded_by=uploaded_by,
+        table_name=table_name,
+        row_count=row_count,
+        status=STATUS_PROCESSING,
+    )
+    db.add(dataset)
+    db.commit()
+    db.refresh(dataset)
+    return dataset
 
 
-def update_status(dataset_id: str, status: str, row_count: int = None) -> bool:
+def update_status(
+    db:         Session,
+    dataset_id: str,
+    status:     str,
+    row_count:  int = None,
+) -> bool:
     """
     Update dataset status.
     Allowed values: 'processing', 'ready', 'error'
     Optionally update row_count when marking as ready.
     """
-    conn = get_conn()
-    cur  = conn.cursor()
-    try:
-        if row_count is not None:
-            cur.execute("""
-                UPDATE datasets SET status = %s, row_count = %s WHERE id = %s
-            """, (status, row_count, dataset_id))
-        else:
-            cur.execute("""
-                UPDATE datasets SET status = %s WHERE id = %s
-            """, (status, dataset_id))
-        conn.commit()
-        return cur.rowcount > 0
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        cur.close()
-        conn.close()
+    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+    if not dataset:
+        return False
+    dataset.status = status
+    if row_count is not None:
+        dataset.row_count = row_count
+    db.commit()
+    return True
 
 
-def delete_dataset(dataset_id: str) -> bool:
+def delete_dataset(db: Session, dataset_id: str) -> bool:
     """
     Delete a dataset record.
     Note: this does NOT drop the actual SQL table — handle that separately.
     """
-    conn = get_conn()
-    cur  = conn.cursor()
-    try:
-        cur.execute("DELETE FROM datasets WHERE id = %s", (dataset_id,))
-        conn.commit()
-        return cur.rowcount > 0
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        cur.close()
-        conn.close()
+    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+    if not dataset:
+        return False
+    db.delete(dataset)
+    db.commit()
+    return True

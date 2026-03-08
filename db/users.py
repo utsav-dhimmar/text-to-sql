@@ -1,179 +1,103 @@
 # ============================================================
 # db/users.py
 # All database operations for the users table
+# Uses SQLAlchemy ORM
 #
 # Table:
 #   users (id, email, password_hash, role, status, created_at)
 # ============================================================
 
 import bcrypt
-import psycopg2
-import psycopg2.extras
-from db.connection import get_conn
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from db.models import User
 
 
-def create_user(email: str, password: str, role: str = "user") -> dict:
+def create_user(db: Session, email: str, password: str, role: str = "user") -> User:
     """
     Register a new user.
     - Hashes password with bcrypt before storing
-    - Returns the created user (without password_hash)
     - Raises ValueError if email already exists
     """
-    password_hash = bcrypt.hashpw(
-        password.encode(), bcrypt.gensalt(12)
-    ).decode()
+    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(12)).decode()
 
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    user = User(email=email, password_hash=password_hash, role=role, status="active")
+    db.add(user)
     try:
-        cur.execute("""
-            INSERT INTO users (email, password_hash, role, status)
-            VALUES (%s, %s, %s, 'active')
-            RETURNING id, email, role, status, created_at
-        """, (email, password_hash, role))
-        user = dict(cur.fetchone())
-        conn.commit()
+        db.commit()
+        db.refresh(user)
         return user
-    except psycopg2.errors.UniqueViolation:
-        conn.rollback()
+    except IntegrityError:
+        db.rollback()
         raise ValueError(f"Email already exists: {email}")
-    finally:
-        cur.close()
-        conn.close()
 
 
-def login_user(email: str, password: str) -> dict | None:
+def login_user(db: Session, email: str, password: str) -> User | None:
     """
     Verify email + password.
-    - Returns user dict on success
+    - Returns User on success
     - Returns None if email not found or password wrong
     - Raises PermissionError if user is banned or deleted
     """
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute("""
-            SELECT id, email, password_hash, role, status
-            FROM users
-            WHERE email = %s
-        """, (email,))
-        user = cur.fetchone()
+    user = db.query(User).filter(User.email == email).first()
 
-        if not user:
-            return None
+    if not user:
+        return None
 
-        if user["status"] == "banned":
-            raise PermissionError("Your account has been banned.")
+    if user.status == "banned":
+        raise PermissionError("Your account has been banned.")
 
-        if user["status"] == "deleted":
-            raise PermissionError("Your account has been deleted.")
+    if user.status == "deleted":
+        raise PermissionError("Your account has been deleted.")
 
-        if not bcrypt.checkpw(password.encode(), user["password_hash"].encode()):
-            return None
+    if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+        return None
 
-        return {
-            "id":    str(user["id"]),
-            "email": user["email"],
-            "role":  user["role"],
-        }
-    finally:
-        cur.close()
-        conn.close()
+    return user
 
 
-def get_user_by_id(user_id: str) -> dict | None:
+def get_user_by_id(db: Session, user_id: str) -> User | None:
     """Fetch a single user by UUID. Returns None if not found."""
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute("""
-            SELECT id, email, role, status, created_at
-            FROM users
-            WHERE id = %s
-        """, (user_id,))
-        row = cur.fetchone()
-        return dict(row) if row else None
-    finally:
-        cur.close()
-        conn.close()
+    return db.query(User).filter(User.id == user_id).first()
 
 
-def get_user_by_email(email: str) -> dict | None:
+def get_user_by_email(db: Session, email: str) -> User | None:
     """Fetch a single user by email. Returns None if not found."""
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute("""
-            SELECT id, email, role, status, created_at
-            FROM users
-            WHERE email = %s
-        """, (email,))
-        row = cur.fetchone()
-        return dict(row) if row else None
-    finally:
-        cur.close()
-        conn.close()
+    return db.query(User).filter(User.email == email).first()
 
 
-def get_all_users() -> list:
+def get_all_users(db: Session) -> list[User]:
     """
     Fetch all users ordered by creation date.
     Admin only — do not expose to regular users.
     """
-    conn = get_conn()
-    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute("""
-            SELECT id, email, role, status, created_at
-            FROM users
-            ORDER BY created_at DESC
-        """)
-        return [dict(r) for r in cur.fetchall()]
-    finally:
-        cur.close()
-        conn.close()
+    return db.query(User).order_by(User.created_at.desc()).all()
 
 
-def update_role(user_id: str, new_role: str) -> bool:
+def update_role(db: Session, user_id: str, new_role: str) -> bool:
     """
     Update a user's role.
     Allowed values: 'user', 'admin', 'superadmin'
     Note: always log this action in audit_logs after calling.
     """
-    conn = get_conn()
-    cur  = conn.cursor()
-    try:
-        cur.execute("""
-            UPDATE users SET role = %s WHERE id = %s
-        """, (new_role, user_id))
-        conn.commit()
-        return cur.rowcount > 0
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        cur.close()
-        conn.close()
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return False
+    user.role = new_role
+    db.commit()
+    return True
 
 
-def update_status(user_id: str, new_status: str) -> bool:
+def update_status(db: Session, user_id: str, new_status: str) -> bool:
     """
     Update a user's status.
     Allowed values: 'active', 'banned', 'deleted'
     Note: 'deleted' is a soft delete — row is kept for audit purposes.
     Note: always log this action in audit_logs after calling.
     """
-    conn = get_conn()
-    cur  = conn.cursor()
-    try:
-        cur.execute("""
-            UPDATE users SET status = %s WHERE id = %s
-        """, (new_status, user_id))
-        conn.commit()
-        return cur.rowcount > 0
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        cur.close()
-        conn.close()
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return False
+    user.status = new_status
+    db.commit()
+    return True

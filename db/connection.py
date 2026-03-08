@@ -1,24 +1,47 @@
 # ============================================================
 # db/connection.py
-# Single database connection used by all schema files
+# SQLAlchemy engine, session, and Base
+# All db files import from here
 # ============================================================
 
-import os
-import psycopg2
-import psycopg2.extras
-from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from config import DATABASE_URL
 
-load_dotenv()
+# ── Engine ───────────────────────────────────────────────────
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,      # auto-reconnect on lost connections
+    pool_size=5,             # max 5 persistent connections
+    max_overflow=10,         # max 10 extra connections under load
+    echo=False,              # set True to log all SQL queries
+)
 
-DB_CONFIG = {
-    "host":     os.getenv("DB_HOST",     "localhost"),
-    "port":     os.getenv("DB_PORT",     "5432"),
-    "database": os.getenv("DB_NAME",     "nifty500"),
-    "user":     os.getenv("DB_USER",     "postgres"),
-    "password": os.getenv("DB_PASSWORD", ""),
-}
+# ── Session ──────────────────────────────────────────────────
+SessionLocal = sessionmaker(
+    bind=engine,
+    autocommit=False,
+    autoflush=False,
+)
+
+# ── Base ─────────────────────────────────────────────────────
+Base = declarative_base()
 
 
-def get_conn():
-    """Returns a new PostgreSQL connection."""
-    return psycopg2.connect(**DB_CONFIG)
+def get_db():
+    """
+    Dependency function — yields a DB session.
+    Use this in FastAPI endpoints:
+
+        from db.connection import get_db
+        from sqlalchemy.orm import Session
+
+        @app.get("/users")
+        def get_users(db: Session = Depends(get_db)):
+            ...
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
