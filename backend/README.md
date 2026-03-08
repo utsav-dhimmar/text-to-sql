@@ -21,6 +21,7 @@ FastAPI-based backend for the Text-to-SQL application.
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 uv sync
 ```
@@ -28,6 +29,7 @@ uv sync
 2. Copy `.env.example` to `.env` and configure values
 
 3. Run the server:
+
 ```bash
 uv run uvicorn main:app --reload
 ```
@@ -38,3 +40,4 @@ uv run uvicorn main:app --reload
 - **SQLAlchemy** - ORM (async with asyncpg)
 - **Pydantic** - Data validation
 - **LangChain / DSPy** - LLM integrations
+  <!--this is just comment-->

@@ -1,3 +1,6 @@
-from db.database import Base, async_session_maker, engine, get_db
+# ============================================================
+# Usage:
+#   from db import users, audit_logs, chat_history, datasets
+# ============================================================
 
-__all__ = ["Base", "engine", "get_db", "async_session_maker"]
+from .database import engine, get_db
