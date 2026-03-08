@@ -12,4 +12,12 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      "/api": {
+        target: "", // CHNAGE TO BACKEND URL
+        changeOrigin: true,
+      },
+    },
+  },
 });
