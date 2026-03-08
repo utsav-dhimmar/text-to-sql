@@ -1,32 +1,36 @@
 import { AdminClient } from ".";
+import type { UserAdminResponse, AuditLogResponse } from "../../types";
 
-// TODO: REPLACE TO ACTUAL API ROUTES
-// time 5 min
 export const AdminServices = {
-  login: async (data: any) => {
-    const { data: res } = await AdminClient.post("/admin/login", data);
+  getUsers: async () => {
+    const { data: res } =
+      await AdminClient.get<UserAdminResponse[]>("/admin/users");
     return res;
   },
-  getUser: async () => {
-    // get name, role
-    const { data: res } = await AdminClient.post("/admin/users");
+
+  updateUserStatus: async (userId: string, status: string) => {
+    const { data: res } = await AdminClient.patch<boolean>(
+      `/admin/users/${userId}/status`,
+      { status },
+    );
     return res;
   },
-  getQuery: async () => {
-    // get query, actual SQL query and from which user
-    const { data: res } = await AdminClient.post("/admin/query");
+
+  updateUserRole: async (userId: string, role: string) => {
+    const { data: res } = await AdminClient.patch<boolean>(
+      `/admin/users/${userId}/role`,
+      { role },
+    );
     return res;
   },
-  toggleUserStatus: async (id: any) => {
-    const { data: res } = await AdminClient.patch(`/admin/users/${id}/toggle`);
-    return res;
-  },
-  deleteUser: async (id: any) => {
-    const { data: res } = await AdminClient.delete(`/admin/users/${id}/toggle`);
-    return res;
-  },
-  makeAdmin: async (id: any) => {
-    const { data: res } = await AdminClient.patch(`/admin/users/${id}/make-admin`);
+
+  getAuditLogs: async (limit: number = 50) => {
+    const { data: res } = await AdminClient.get<AuditLogResponse[]>(
+      "/admin/audit-logs",
+      {
+        params: { limit },
+      },
+    );
     return res;
   },
 };
