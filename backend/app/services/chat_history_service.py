@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.user import ChatHistory
+from app.models.user import ChatHistory
 
 
 class ChatHistoryService:

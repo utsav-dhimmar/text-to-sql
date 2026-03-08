@@ -47,9 +47,7 @@ def create_user(email: str, password: str, role: str = "user") -> dict:
     Register a new user.
     Password is hashed with bcrypt before storing.
     """
-    password_hash = bcrypt.hashpw(
-        password.encode(), bcrypt.gensalt(12)
-    ).decode()
+    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(12)).decode()
 
     conn = get_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -104,9 +102,7 @@ def login_user(email: str, password: str) -> dict | None:
             print("❌ User account deleted")
             return None
 
-        if not bcrypt.checkpw(
-            password.encode(), user["password_hash"].encode()
-        ):
+        if not bcrypt.checkpw(password.encode(), user["password_hash"].encode()):
             print("❌ Wrong password")
             return None
 

@@ -1,10 +1,9 @@
-import bcrypt
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import hash_password, verify_password
-from models.user import User, UserRole, UserStatus
+from app.core.security import hash_password, verify_password
+from app.models.user import User, UserRole, UserStatus
 
 
 class UserService:
@@ -27,6 +26,9 @@ class UserService:
         except IntegrityError:
             await self.db.rollback()
             raise ValueError(f"Email already exists: {email}")
+        except Exception as e:
+            await self.db.rollback()
+            raise e
 
     async def login_user(self, email: str, password: str) -> User | None:
         result = await self.db.execute(select(User).where(User.email == email))
@@ -41,10 +43,52 @@ class UserService:
         if user.status == UserStatus.DELETED:
             raise PermissionError("Your account has been deleted.")
 
-        if not verify_password(password, user.password_hash):
+        if not user.password_hash or not verify_password(password, user.password_hash):
             return None
 
         return user
+
+    async def get_or_create_google_user(self, google_id: str, email: str) -> User:
+        result = await self.db.execute(
+            select(User).where((User.google_id == google_id) | (User.email == email))
+        )
+        user = result.scalar_one_or_none()
+
+        if user:
+            # Update google_id if it's missing (e.g., user originally registered via email)
+            if not user.google_id:
+                user.google_id = google_id
+                await self.db.commit()
+                await self.db.refresh(user)
+
+            if user.status == UserStatus.BANNED:
+                raise PermissionError("Your account has been banned.")
+            if user.status == UserStatus.DELETED:
+                raise PermissionError("Your account has been deleted.")
+
+            return user
+
+        # Create new user if not found
+        user = User(
+            email=email,
+            google_id=google_id,
+            password_hash=None,
+            role=UserRole.USER,
+            status=UserStatus.ACTIVE,
+        )
+        self.db.add(user)
+        try:
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+        except IntegrityError:
+            await self.db.rollback()
+            # If somehow email was taken between check and create
+            result = await self.db.execute(select(User).where(User.email == email))
+            return result.scalar_one()
+        except Exception as e:
+            await self.db.rollback()
+            raise e
 
     async def get_user_by_id(self, user_id: str) -> User | None:
         result = await self.db.execute(select(User).where(User.id == user_id))
