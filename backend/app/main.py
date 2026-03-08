@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from .api.auth import router as auth_router
+from .api.query import router as query_router
 from .core.config import get_settings
 from .db.database import engine
 from .models import Base
@@ -60,6 +61,7 @@ async def startup():
 
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(query_router)
 
 
 @app.get("/")
