@@ -1,15 +1,16 @@
 import { axiosClient } from "../client";
-import type { ChatHistoryResponse } from "../types";
+import type { ChatHistoryResponse, QueryResponse } from "../types";
 
 export interface ChatCreateData {
   human_query: string;
+  session_id?: string;
   sql_generated?: string;
   result_summary?: string;
 }
 
 export const ChatService = {
-  saveChat: async (data: ChatCreateData) => {
-    const { data: res } = await axiosClient.post<ChatHistoryResponse>(
+  queryChat: async (data: ChatCreateData) => {
+    const { data: res } = await axiosClient.post<QueryResponse>(
       "/chat/",
       data,
     );

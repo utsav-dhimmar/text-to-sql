@@ -40,6 +40,15 @@ export interface DatasetResponse {
   created_at: string;
 }
 
+export interface QueryResponse {
+  status: string;
+  data?: any[];
+  message?: string;
+  session_id: string;
+  cached: boolean;
+  remaining_requests?: number;
+}
+
 export interface AuditLogResponse {
   id: string;
   actor_id: string;
