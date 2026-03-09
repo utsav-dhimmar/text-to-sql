@@ -5,6 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .api.admin import router as admin_router
 from .api.auth import router as auth_router
+from .api.query import router as query_router
 from .api.chat import router as chat_router
 from .api.datasets import router as dataset_router
 from .core.config import get_settings
@@ -63,6 +64,7 @@ async def startup():
 
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(query_router)
 app.include_router(admin_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(dataset_router, prefix="/api")
