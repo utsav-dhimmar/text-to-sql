@@ -8,6 +8,7 @@ import type {
   ChatHistoryResponse,
 } from "../apis/types";
 import { Button } from "../components/ui";
+import { useAppSelector } from "../store";
 import {
   Trash2,
   Ban,
@@ -27,7 +28,11 @@ interface AdminDashboardProps {
   mode?: AdminDashboardMode;
 }
 
-export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) {
+export default function AdminDashboard({
+  mode = "admin",
+}: AdminDashboardProps) {
+  const authUser = useAppSelector((state) => state.auth.user);
+  const isSuperAdmin = mode === "superadmin" || authUser?.role === "superadmin";
   const [users, setUsers] = useState<UserAdminResponse[]>([]);
   const [chats, setChats] = useState<ChatHistoryResponse[]>([]);
   const [selectedChat, setSelectedChat] = useState<ChatHistoryResponse | null>(
@@ -59,7 +64,7 @@ export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) 
       setUsers(usersData);
       setChats(chatsData);
       setAnalytics(analyticsData);
-      if (mode === "superadmin") {
+      if (isSuperAdmin) {
         const adminsData = await SuperAdminServices.getAdmins();
         setAdmins(adminsData);
       }
@@ -156,7 +161,7 @@ export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) 
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 p-4 sm:p-8">
       <Navbar
         title={
-          mode === "superadmin" ? "Super Admin Dashboard" : "Admin Dashboard"
+          isSuperAdmin ? "Super Admin Dashboard" : "Admin Dashboard"
         }
       />
 
@@ -168,7 +173,7 @@ export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) 
               <BarChart3 className="text-emerald-500" size={20} />
               Platform Analytics
             </h2>
-            {mode === "superadmin" && (
+            {isSuperAdmin && (
               <span className="text-xs font-semibold uppercase tracking-wider text-red-500 flex items-center gap-2">
                 <Shield size={14} />
                 Super Admin
@@ -199,7 +204,7 @@ export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) 
         </div>
 
         {/* User Management Section */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+        <div className="lg:col-span-2  bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
             <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
               <Search className="text-blue-500" size={20} />
@@ -267,26 +272,27 @@ export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) 
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        {mode === "superadmin" && user.role !== "superadmin" && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              handleAdminRoleChange(
-                                user.id,
-                                user.role === "admin" ? "user" : "admin",
-                              )
-                            }
-                            title={
-                              user.role === "admin"
-                                ? "Demote to User"
-                                : "Promote to Admin"
-                            }
-                            className="h-8 w-8 rounded-lg"
-                          >
-                            <UserCog size={14} className="text-slate-500" />
-                          </Button>
-                        )}
+                        {isSuperAdmin &&
+                          user.role !== "superadmin" && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() =>
+                                handleAdminRoleChange(
+                                  user.id,
+                                  user.role === "admin" ? "user" : "admin",
+                                )
+                              }
+                              title={
+                                user.role === "admin"
+                                  ? "Demote to User"
+                                  : "Promote to Admin"
+                              }
+                              className="h-8 w-8 rounded-lg"
+                            >
+                              <UserCog size={14} className="text-slate-500" />
+                            </Button>
+                          )}
                         <Button
                           variant="outline"
                           size="icon"
@@ -477,7 +483,7 @@ export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) 
         </div>
       </div>
 
-      {mode === "superadmin" && (
+      {isSuperAdmin && (
         <div className="mt-8 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
           <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
             <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
