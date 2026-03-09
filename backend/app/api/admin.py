@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.dependencies import CurrentAdminUser, DBSession
+from app.dependencies import CurrentAdminUser, CurrentSuperAdminUser, DBSession
 from app.schemas.api import (
     AdminAnalyticsResponse,
     AuditLogResponse,
@@ -134,7 +134,7 @@ async def get_admin_analytics(db: DBSession, current_admin: CurrentAdminUser):
 
 @router.post("/sectors", response_model=SectorResponse)
 async def create_sector(
-    payload: SectorCreate, db: DBSession, current_admin: CurrentAdminUser
+    payload: SectorCreate, db: DBSession, current_superadmin: CurrentSuperAdminUser
 ):
     platform_service = AdminPlatformService(db)
     try:
@@ -149,7 +149,7 @@ async def create_sector(
 
 @router.post("/companies", response_model=CompanyResponse)
 async def create_company(
-    payload: CompanyCreate, db: DBSession, current_admin: CurrentAdminUser
+    payload: CompanyCreate, db: DBSession, current_superadmin: CurrentSuperAdminUser
 ):
     platform_service = AdminPlatformService(db)
     try:

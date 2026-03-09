@@ -165,9 +165,9 @@ export default function AdminDashboard({
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         {/* Analytics Section */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
           <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
             <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
               <BarChart3 className="text-emerald-500" size={20} />
@@ -204,7 +204,7 @@ export default function AdminDashboard({
         </div>
 
         {/* User Management Section */}
-        <div className="lg:col-span-2  bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
             <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
               <Search className="text-blue-500" size={20} />
@@ -214,7 +214,7 @@ export default function AdminDashboard({
               {users.length} Users
             </span>
           </div>
-          <div className="overflow-y-auto max-h-[calc(100vh-300px)]">
+          <div className="overflow-y-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50 dark:bg-zinc-800/50 sticky top-0 z-10">
                 <tr>
@@ -328,68 +328,72 @@ export default function AdminDashboard({
           </div>
         </div>
 
-        {/* Data Management Section */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
-            <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
-              <Building2 className="text-amber-500" size={20} />
-              Data Management
-            </h2>
-          </div>
-          <div className="p-6 space-y-6">
-            <div>
-              <p className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
-                Create Sector
-              </p>
-              <div className="mt-3 flex flex-col sm:flex-row gap-3">
-                <input
-                  value={sectorName}
-                  onChange={(e) => setSectorName(e.target.value)}
-                  placeholder="Sector name"
-                  className="flex-1 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
-                />
-                <Button onClick={handleCreateSector} disabled={!sectorName}>
-                  Add Sector
-                </Button>
-              </div>
+        {/* Data Management Section (Super Admin Only) */}
+        {isSuperAdmin && (
+          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
+              <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+                <Building2 className="text-amber-500" size={20} />
+                Data Management
+              </h2>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
-                Create Company
-              </p>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr,150px,auto] gap-3">
-                <input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Company name"
-                  className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  value={industryId}
-                  onChange={(e) =>
-                    setIndustryId(e.target.value ? Number(e.target.value) : "")
-                  }
-                  placeholder="Industry ID"
-                  className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
-                />
-                <Button
-                  onClick={handleCreateCompany}
-                  disabled={!companyName || !industryId}
-                >
-                  Add Company
-                </Button>
+            <div className="p-6 space-y-6">
+              <div>
+                <p className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+                  Create Sector
+                </p>
+                <div className="mt-3 flex flex-col sm:flex-row gap-3">
+                  <input
+                    value={sectorName}
+                    onChange={(e) => setSectorName(e.target.value)}
+                    placeholder="Sector name"
+                    className="flex-1 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
+                  />
+                  <Button onClick={handleCreateSector} disabled={!sectorName}>
+                    Add Sector
+                  </Button>
+                </div>
               </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+                  Create Company
+                </p>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr,150px,auto] gap-3">
+                  <input
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Company name"
+                    className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    value={industryId}
+                    onChange={(e) =>
+                      setIndustryId(
+                        e.target.value ? Number(e.target.value) : "",
+                      )
+                    }
+                    placeholder="Industry ID"
+                    className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
+                  />
+                  <Button
+                    onClick={handleCreateCompany}
+                    disabled={!companyName || !industryId}
+                  >
+                    Add Company
+                  </Button>
+                </div>
+              </div>
+              {formMessage && (
+                <p className="text-sm text-indigo-500">{formMessage}</p>
+              )}
             </div>
-            {formMessage && (
-              <p className="text-sm text-indigo-500">{formMessage}</p>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Human Queries Section */}
-        <div className="grid grid-rows-[1fr,auto] gap-6 max-h-[calc(100vh-200px)]">
+        <div className="grid grid-rows-[1fr,1fr] gap-6 h-[640px]">
           <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
               <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
@@ -434,7 +438,7 @@ export default function AdminDashboard({
           <div
             className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden transition-all duration-300 ${selectedChat ? "opacity-100 translate-y-0" : "opacity-50 translate-y-4 pointer-events-none"}`}
           >
-            <div className="p-6">
+            <div className="p-6 h-full overflow-y-auto">
               <h3 className="text-lg font-bold dark:text-white mb-4 flex items-center gap-2">
                 <div className="w-2 h-6 bg-indigo-500 rounded-full"></div>
                 Generated AI Query
