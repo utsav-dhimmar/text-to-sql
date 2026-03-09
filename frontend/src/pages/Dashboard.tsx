@@ -4,7 +4,7 @@ import { Button } from "../components/ui";
 import { useAppDispatch, useAppSelector } from "../store";
 import { logout } from "../store/slices/authSlice";
 import { toggleTheme } from "../store/slices/themeSlice";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, User } from "lucide-react";
 
 export default function Dashboard() {
   const { user } = useAppSelector((state) => state.auth);
@@ -39,6 +39,15 @@ export default function Dashboard() {
             fullWidth={false}
           >
             {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+          </Button>
+          <Button
+            onClick={() => navigate("/profile")}
+            variant="outline"
+            fullWidth={false}
+            className="flex items-center gap-2"
+          >
+            <User size={18} />
+            Profile
           </Button>
           <Button onClick={handleLogout} variant="outline" fullWidth={false}>
             Logout
