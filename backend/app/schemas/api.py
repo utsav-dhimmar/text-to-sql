@@ -33,6 +33,7 @@ class AuditLogResponse(BaseModel):
 
 class ChatHistoryCreate(BaseModel):
     human_query: str
+    session_id: Optional[str] = None
     sql_generated: Optional[str] = None
     result_summary: Optional[str] = None
 
