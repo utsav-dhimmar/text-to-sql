@@ -4,7 +4,7 @@ import { type ButtonHTMLAttributes, type ReactNode } from "react";
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?: ReactNode;
   isLoading?: boolean;
-  variant?: "primary" | "secondary" | "outline";
+  variant?: "primary" | "secondary" | "outline" | "danger";
   fullWidth?: boolean;
   icon?: ReactNode;
   size?: "default" | "icon";
@@ -28,6 +28,8 @@ export function Button({
       "text-blue-700 bg-blue-100 hover:bg-blue-200 focus:ring-blue-500 border border-transparent dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800",
     outline:
       "text-neutral-700 bg-white hover:bg-neutral-50 border border-neutral-300 focus:ring-blue-500 shadow-sm dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-800",
+    danger:
+      "text-black bg-white hover:bg-neutral-50 border border-neutral-300 focus:ring-blue-500 shadow-sm dark:bg-red-400  dark:border-gray-700 dark:hover:bg-red-500",
   };
 
   const widthStyle = fullWidth ? "w-full" : "";
