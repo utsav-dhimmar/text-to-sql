@@ -37,6 +37,12 @@ class ChatHistoryService:
         )
         return list(result.scalars().all())
 
+    async def get_all_chat_history(self, limit: int = 100) -> list[ChatHistory]:
+        result = await self.db.execute(
+            select(ChatHistory).order_by(ChatHistory.created_at.desc()).limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def get_recent_chats_for_context(
         self, user_id: str, limit: int = 5
     ) -> list[ChatHistory]:

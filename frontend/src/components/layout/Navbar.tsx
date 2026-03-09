@@ -1,4 +1,4 @@
-import { Moon, Sun, User as UserIcon, ArrowLeft } from "lucide-react";
+import { Moon, Sun, User as UserIcon, ArrowLeft, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -14,6 +14,7 @@ interface NavbarProps {
 
 export function Navbar({ title, showBackButton, titleRight }: NavbarProps) {
     const { theme } = useAppSelector((state) => state.theme);
+    const { user } = useAppSelector((state) => state.auth);
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
 
@@ -31,6 +32,8 @@ export function Navbar({ title, showBackButton, titleRight }: NavbarProps) {
     const handleToggleTheme = () => {
         dispatch(toggleTheme());
     };
+
+    const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
     return (
         <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
@@ -59,6 +62,17 @@ export function Navbar({ title, showBackButton, titleRight }: NavbarProps) {
                     {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
                     <span className="hidden sm:inline">Theme</span>
                 </Button>
+                {isAdmin && (
+                    <Button
+                        onClick={() => navigate("/admin")}
+                        variant="outline"
+                        fullWidth={false}
+                        className="flex items-center gap-2 border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-600 dark:text-indigo-400"
+                    >
+                        <Shield size={18} />
+                        <span className="hidden sm:inline">Admin</span>
+                    </Button>
+                )}
                 <Button
                     onClick={() => navigate("/profile")}
                     variant="outline"
