@@ -48,6 +48,19 @@ services:
             postgres:
                 condition: service_healthy
 
+    # ── RedisInsight (visual Redis browser) ───────────────────
+    redisinsight:
+        image: redis/redisinsight:latest
+        container_name: nifty500_redisinsight
+        restart: unless-stopped
+        ports:
+            - "5540:5540"
+        volumes:
+            - redisinsight_data:/data
+        depends_on:
+            - redis
+
 volumes:
     postgres_data:
     redis_data:
+    redisinsight_data:
