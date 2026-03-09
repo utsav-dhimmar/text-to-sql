@@ -129,11 +129,17 @@ async def google_login(request: Request):
     """
     Redirect the user to Google for authentication.
     """
-    redirect_uri = f"{request.base_url}api/auth/google/callback"
-    
-    if settings.ENV != "development" and not str(redirect_uri).startswith("https"):
-        redirect_uri = str(redirect_uri).replace("http://", "https://")
+    if settings.ENV == "development":
+        # In dev, the frontend (Vite) proxies /api to the backend.
+        # Use the frontend origin so the session cookie domain stays consistent.
+        base_url = settings.FRONTEND_URL.rstrip("/")
+    else:
+        base_url = str(request.base_url).rstrip("/")
+        if not base_url.startswith("https"):
+            base_url = base_url.replace("http://", "https://", 1)
 
+    redirect_uri = f"{base_url}/api/auth/google/callback"
+    
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
