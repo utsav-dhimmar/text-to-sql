@@ -130,7 +130,7 @@ async def google_login(request: Request):
     Redirect the user to Google for authentication.
     """
     redirect_uri = f"{request.base_url}api/auth/google/callback"
-    # Ensure it's using https if in production (optional, depending on proxy)
+    
     if settings.ENV != "development" and not str(redirect_uri).startswith("https"):
         redirect_uri = str(redirect_uri).replace("http://", "https://")
 
