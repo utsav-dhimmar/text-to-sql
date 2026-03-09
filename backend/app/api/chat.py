@@ -1,3 +1,4 @@
+import json
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -73,7 +74,7 @@ async def process_chat(
             user_id=user_id,
             human_query=new_question,
             sql_generated=cached_result.get("sql"),
-            result_summary=str(cached_result.get("data"))
+            result_summary=json.dumps(cached_result.get("data"))
             if cached_result.get("data")
             else None,
         )
@@ -105,7 +106,7 @@ async def process_chat(
                 user_id=user_id,
                 human_query=new_question,
                 sql_generated=result.get("sql"),
-                result_summary=str(result.get("data"))
+                result_summary=json.dumps(result.get("data"))
                 if result.get("data")
                 else None,
             )

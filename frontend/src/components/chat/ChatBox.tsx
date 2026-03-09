@@ -7,6 +7,7 @@ import {
 } from "../../store/slices/chatSlice";
 import { Button } from "../ui";
 import { Send, Loader2 } from "lucide-react";
+import { ChatTable } from "./ChatTable";
 
 export const ChatBox = () => {
     const dispatch = useAppDispatch();
@@ -56,30 +57,71 @@ export const ChatBox = () => {
                     </div>
                 )}
 
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={`flex flex-col max-w-[80%] ${msg.role === "user" ? "ml-auto items-end" : "mr-auto items-start"
-                            }`}
-                    >
+                {messages.map((msg) => {
+                    let tableData: any[] | null = null;
+                    if (msg.result_summary) {
+                        try {
+                            // Try standard JSON parse
+                            let parsed = JSON.parse(msg.result_summary);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                tableData = parsed;
+                            }
+                        } catch (e) {
+                            // Fallback for legacy Python stringified lists
+                            try {
+                                // A simplistic replacement to fix Python dict to JSON
+                                const fixedStr = msg.result_summary
+                                    .replace(/'/g, '"')
+                                    .replace(/None/g, 'null')
+                                    .replace(/False/g, 'false')
+                                    .replace(/True/g, 'true');
+                                let parsed = JSON.parse(fixedStr);
+                                if (Array.isArray(parsed) && parsed.length > 0) {
+                                    tableData = parsed;
+                                }
+                            } catch (fallbackError) {
+                                // Ignore, leave tableData as null to display raw text
+                            }
+                        }
+                    }
+
+                    return (
                         <div
-                            className={`px-4 py-2 rounded-2xl shadow-sm text-sm ${msg.role === "user"
-                                    ? "bg-blue-600 text-white rounded-br-none"
-                                    : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border dark:border-gray-700 rounded-bl-none"
+                            key={msg.id}
+                            className={`flex flex-col max-w-[90%] ${msg.role === "user" ? "ml-auto items-end" : "mr-auto items-start"
                                 }`}
                         >
-                            <p className="whitespace-pre-wrap">{msg.content}</p>
-                            {msg.sql_generated && (
-                                <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-xs font-mono overflow-x-auto text-gray-700 dark:text-gray-300">
-                                    {msg.sql_generated}
-                                </div>
-                            )}
+                            <div
+                                className={`px-4 py-2 rounded-2xl shadow-sm text-sm ${msg.role === "user"
+                                    ? "bg-blue-600 text-white rounded-br-none"
+                                    : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border dark:border-gray-700 rounded-bl-none overflow-x-auto w-full"
+                                    }`}
+                            >
+                                <p className="whitespace-pre-wrap">{msg.content}</p>
+
+                                {tableData && (
+                                    <ChatTable data={tableData} />
+                                )}
+
+                                {!tableData && msg.result_summary && msg.role === "assistant" && (
+                                    <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-xs overflow-x-auto text-gray-700 dark:text-gray-300">
+                                        {msg.result_summary}
+                                    </div>
+                                )}
+
+                                {msg.sql_generated && (
+                                    <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-mono overflow-x-auto text-gray-700 dark:text-gray-300">
+                                        <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-sans">Generated SQL</div>
+                                        {msg.sql_generated}
+                                    </div>
+                                )}
+                            </div>
+                            <span className="text-xs text-gray-400 mt-1">
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                         </div>
-                        <span className="text-xs text-gray-400 mt-1">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                    </div>
-                ))}
+                    );
+                })}
                 {loading && (
                     <div className="flex items-center gap-2 text-gray-500 mr-auto p-2">
                         <Loader2 className="animate-spin w-4 h-4" />
