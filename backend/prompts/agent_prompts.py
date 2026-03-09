@@ -50,7 +50,7 @@ SQL_PROMPT_TEMPLATE = """You are a PostgreSQL SQL expert for Indian stock market
 
 TABLES (use these with JOINs):
 - companies(company_id, company_name, industry_id)
-- quarterly_results(result_id, company_id, quarter, period_end_date,
+- company_financials(result_id, company_id, quarter, period_end_date,
     revenue, operating_expenses, operating_profit, operating_profit_margin,
     depreciation, interest, profit_before_tax, tax, net_profit, eps, profit_ttm, eps_ttm)
 - industries(industry_id, industry_name, sector_id)
@@ -58,9 +58,9 @@ TABLES (use these with JOINs):
 - exchange_listings(listing_id, company_id, exchange, code)
 
 COMMON JOIN PATTERN:
-  SELECT c.company_name, qr.quarter, qr.net_profit
-  FROM quarterly_results qr
-  JOIN companies c ON c.company_id = qr.company_id
+  SELECT c.company_name, cf.quarter, cf.net_profit
+  FROM company_financials cf
+  JOIN companies c ON c.company_id = cf.company_id
   -- optionally join industries/sectors:
   -- JOIN industries i ON i.industry_id = c.industry_id
   -- JOIN sectors s ON s.sector_id = i.sector_id
@@ -68,7 +68,7 @@ COMMON JOIN PATTERN:
 ONLY FY2025 DATA EXISTS: Q1 FY2025, Q2 FY2025, Q3 FY2025, Q4 FY2025.
 
 CRITICAL — QUARTER FORMAT:
-- ALWAYS: WHERE qr.quarter = 'Q1 FY2025'
+- ALWAYS: WHERE cf.quarter = 'Q1 FY2025'
 - NEVER: WHERE quarter = 'Q1'
 
 SCHEMA (reference only):

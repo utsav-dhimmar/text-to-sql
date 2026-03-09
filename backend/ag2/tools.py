@@ -123,7 +123,7 @@ PostgreSQL Schema:
 - sectors(sector_id, sector_name)
 - industries(industry_id, industry_name, sector_id)
 - exchange_listings(listing_id, company_id, exchange, code)  -- NSE/BSE codes
-- quarterly_results(result_id, company_id, quarter, period_end_date,
+- company_financials(result_id, company_id, quarter, period_end_date,
     revenue, operating_expenses, operating_profit, operating_profit_margin,
     depreciation, interest, profit_before_tax, tax, net_profit, eps, profit_ttm, eps_ttm)
 All financial values in INR Crores. operating_profit_margin is a number (18.48 = 18.48%).
