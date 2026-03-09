@@ -83,3 +83,17 @@ async def get_current_admin_user(
 
 
 CurrentAdminUser = Annotated[UserResponse, Depends(get_current_admin_user)]
+
+
+async def get_current_superadmin_user(
+    current_user: CurrentUser,
+) -> UserResponse:
+    if current_user.role != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin permissions required",
+        )
+    return current_user
+
+
+CurrentSuperAdminUser = Annotated[UserResponse, Depends(get_current_superadmin_user)]

@@ -1,16 +1,19 @@
 import { AdminClient } from ".";
 import { AdminServices } from "./admin.service";
+import type { UserAdminResponse } from "../../types";
 
-// TODO: REPLACE TO ACTUAL API ROUTES
-// approx time 2 min
 export const SuperAdminServices = {
   ...AdminServices,
-  addNewSector: async (data: any) => {
-    const { data: res } = await AdminClient.patch("/admin/new-sector", data);
+  getAdmins: async () => {
+    const { data: res } =
+      await AdminClient.get<UserAdminResponse[]>("/superadmin/admins");
     return res;
   },
-  addNewCompany: async (data: any) => {
-    const { data: res } = await AdminClient.post("/admin/new-company", data);
+  updateUserRole: async (userId: string, role: string) => {
+    const { data: res } = await AdminClient.patch<boolean>(
+      `/superadmin/users/${userId}/role`,
+      { role },
+    );
     return res;
   },
 };

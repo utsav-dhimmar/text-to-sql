@@ -58,3 +58,33 @@ class DatasetResponse(BaseModel):
     status: str
     uploaded_by: Optional[UUID] = None
     created_at: datetime
+
+
+class AdminAnalyticsResponse(BaseModel):
+    total_users: int
+    active_users: int
+    banned_users: int
+    total_admins: int
+    total_queries: int
+
+
+class SectorCreate(BaseModel):
+    sector_name: str
+
+
+class CompanyCreate(BaseModel):
+    company_name: str
+    industry_id: int
+
+
+class SectorResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    sector_id: int
+    sector_name: str
+
+
+class CompanyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    company_id: int
+    company_name: str
+    industry_id: int

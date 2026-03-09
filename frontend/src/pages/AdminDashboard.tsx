@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "../components/layout/Navbar";
 import { AdminServices } from "../apis/service/admin/admin.service";
-import type { UserAdminResponse, ChatHistoryResponse } from "../apis/types";
+import { SuperAdminServices } from "../apis/service/admin/super.admin.service";
+import type {
+  AdminAnalyticsResponse,
+  UserAdminResponse,
+  ChatHistoryResponse,
+} from "../apis/types";
 import { Button } from "../components/ui";
 import {
   Trash2,
@@ -10,14 +15,32 @@ import {
   Search,
   MessageSquare,
   ChevronRight,
+  Shield,
+  BarChart3,
+  Building2,
+  UserCog,
 } from "lucide-react";
 
-export default function AdminDashboard() {
+type AdminDashboardMode = "admin" | "superadmin";
+
+interface AdminDashboardProps {
+  mode?: AdminDashboardMode;
+}
+
+export default function AdminDashboard({ mode = "admin" }: AdminDashboardProps) {
   const [users, setUsers] = useState<UserAdminResponse[]>([]);
   const [chats, setChats] = useState<ChatHistoryResponse[]>([]);
   const [selectedChat, setSelectedChat] = useState<ChatHistoryResponse | null>(
     null,
   );
+  const [analytics, setAnalytics] = useState<AdminAnalyticsResponse | null>(
+    null,
+  );
+  const [admins, setAdmins] = useState<UserAdminResponse[]>([]);
+  const [sectorName, setSectorName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [industryId, setIndustryId] = useState<number | "">("");
+  const [formMessage, setFormMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,12 +51,18 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersData, chatsData] = await Promise.all([
+      const [usersData, chatsData, analyticsData] = await Promise.all([
         AdminServices.getUsers(),
         AdminServices.getAllChats(),
+        AdminServices.getAnalytics(),
       ]);
       setUsers(usersData);
       setChats(chatsData);
+      setAnalytics(analyticsData);
+      if (mode === "superadmin") {
+        const adminsData = await SuperAdminServices.getAdmins();
+        setAdmins(adminsData);
+      }
     } catch (err) {
       setError("Failed to fetch admin data");
       console.error(err);
@@ -73,6 +102,48 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreateSector = async () => {
+    setFormMessage(null);
+    try {
+      const sector = await AdminServices.createSector(sectorName);
+      setFormMessage(`Sector created: ${sector.sector_name}`);
+      setSectorName("");
+    } catch (err: any) {
+      setFormMessage(err?.response?.data?.detail || "Failed to create sector");
+    }
+  };
+
+  const handleCreateCompany = async () => {
+    setFormMessage(null);
+    if (!industryId) {
+      setFormMessage("Industry ID is required.");
+      return;
+    }
+    try {
+      const company = await AdminServices.createCompany(
+        companyName,
+        Number(industryId),
+      );
+      setFormMessage(`Company created: ${company.company_name}`);
+      setCompanyName("");
+      setIndustryId("");
+    } catch (err: any) {
+      setFormMessage(err?.response?.data?.detail || "Failed to create company");
+    }
+  };
+
+  const handleAdminRoleChange = async (userId: string, role: string) => {
+    try {
+      const success = await SuperAdminServices.updateUserRole(userId, role);
+      if (success) {
+        const refreshed = await SuperAdminServices.getAdmins();
+        setAdmins(refreshed);
+      }
+    } catch (err) {
+      alert("Failed to update admin role");
+    }
+  };
+
   if (loading)
     return (
       <div className="p-8 text-center dark:text-white">
@@ -83,9 +154,50 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 p-4 sm:p-8">
-      <Navbar title="Admin Dashboard" />
+      <Navbar
+        title={
+          mode === "superadmin" ? "Super Admin Dashboard" : "Admin Dashboard"
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Analytics Section */}
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
+            <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+              <BarChart3 className="text-emerald-500" size={20} />
+              Platform Analytics
+            </h2>
+            {mode === "superadmin" && (
+              <span className="text-xs font-semibold uppercase tracking-wider text-red-500 flex items-center gap-2">
+                <Shield size={14} />
+                Super Admin
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-6">
+            {[
+              { label: "Total Users", value: analytics?.total_users ?? 0 },
+              { label: "Active Users", value: analytics?.active_users ?? 0 },
+              { label: "Banned Users", value: analytics?.banned_users ?? 0 },
+              { label: "Total Admins", value: analytics?.total_admins ?? 0 },
+              { label: "Total Queries", value: analytics?.total_queries ?? 0 },
+            ].map((metric) => (
+              <div
+                key={metric.label}
+                className="rounded-lg border border-gray-200 dark:border-zinc-800 p-4 bg-white/70 dark:bg-zinc-950/40"
+              >
+                <p className="text-xs uppercase tracking-widest text-gray-500 dark:text-zinc-500">
+                  {metric.label}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-zinc-100">
+                  {metric.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* User Management Section */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
@@ -155,6 +267,26 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        {mode === "superadmin" && user.role !== "superadmin" && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              handleAdminRoleChange(
+                                user.id,
+                                user.role === "admin" ? "user" : "admin",
+                              )
+                            }
+                            title={
+                              user.role === "admin"
+                                ? "Demote to User"
+                                : "Promote to Admin"
+                            }
+                            className="h-8 w-8 rounded-lg"
+                          >
+                            <UserCog size={14} className="text-slate-500" />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="icon"
@@ -187,6 +319,66 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Data Management Section */}
+        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
+            <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+              <Building2 className="text-amber-500" size={20} />
+              Data Management
+            </h2>
+          </div>
+          <div className="p-6 space-y-6">
+            <div>
+              <p className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+                Create Sector
+              </p>
+              <div className="mt-3 flex flex-col sm:flex-row gap-3">
+                <input
+                  value={sectorName}
+                  onChange={(e) => setSectorName(e.target.value)}
+                  placeholder="Sector name"
+                  className="flex-1 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
+                />
+                <Button onClick={handleCreateSector} disabled={!sectorName}>
+                  Add Sector
+                </Button>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+                Create Company
+              </p>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr,150px,auto] gap-3">
+                <input
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Company name"
+                  className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  value={industryId}
+                  onChange={(e) =>
+                    setIndustryId(e.target.value ? Number(e.target.value) : "")
+                  }
+                  placeholder="Industry ID"
+                  className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200"
+                />
+                <Button
+                  onClick={handleCreateCompany}
+                  disabled={!companyName || !industryId}
+                >
+                  Add Company
+                </Button>
+              </div>
+            </div>
+            {formMessage && (
+              <p className="text-sm text-indigo-500">{formMessage}</p>
+            )}
           </div>
         </div>
 
@@ -284,6 +476,61 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {mode === "superadmin" && (
+        <div className="mt-8 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
+            <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+              <UserCog className="text-rose-500" size={20} />
+              Admin Management
+            </h2>
+            <span className="text-sm text-gray-500 dark:text-zinc-400">
+              {admins.length} Admins
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 dark:bg-zinc-800/50">
+                <tr>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
+                {admins.map((admin) => (
+                  <tr key={admin.id}>
+                    <td className="px-6 py-4 dark:text-zinc-300 font-medium">
+                      {admin.email}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        {admin.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAdminRoleChange(admin.id, "user")}
+                        className="rounded-lg"
+                      >
+                        Demote to User
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

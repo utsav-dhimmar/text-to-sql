@@ -7,12 +7,17 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from app.core.config import get_settings
+from app.core.security import hash_password
 from app.models import (
     Company,
     ExchangeListing,
     Industry,
     QuarterlyResult,
     Sector,
+    User,
+    UserRole,
+    UserStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -34739,6 +34744,26 @@ async def seed_database(engine: AsyncEngine) -> None:
         print("No companies found in DB. Seeding database...")
 
         try:
+            # 0. Super Admin
+            settings = get_settings()
+            if settings.SUPER_ADMIN_EMAIL and settings.SUPER_ADMIN_PASSWORD:
+                result = await session.execute(
+                    select(User).where(User.email == settings.SUPER_ADMIN_EMAIL)
+                )
+                admin_exists = result.scalar_one_or_none()
+                if not admin_exists:
+                    super_admin = User(
+                        email=settings.SUPER_ADMIN_EMAIL,
+                        password_hash=hash_password(
+                            settings.SUPER_ADMIN_PASSWORD
+                        ),
+                        role=UserRole.SUPERADMIN,
+                        status=UserStatus.ACTIVE,
+                    )
+                    session.add(super_admin)
+                    await session.flush()
+                    logger.info(f"Super Admin created: {settings.SUPER_ADMIN_EMAIL}")
+
             # Insert in dependency order: Sectors -> Industries -> Companies -> Listings -> Results
 
             # 1. Sectors

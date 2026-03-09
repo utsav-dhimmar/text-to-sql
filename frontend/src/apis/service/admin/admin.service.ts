@@ -1,5 +1,12 @@
 import { AdminClient } from ".";
-import type { UserAdminResponse, AuditLogResponse, ChatHistoryResponse } from "../../types";
+import type {
+  UserAdminResponse,
+  AuditLogResponse,
+  ChatHistoryResponse,
+  AdminAnalyticsResponse,
+  SectorResponse,
+  CompanyResponse,
+} from "../../types";
 
 export const AdminServices = {
   getUsers: async () => {
@@ -45,6 +52,28 @@ export const AdminServices = {
       {
         params: { limit },
       },
+    );
+    return res;
+  },
+
+  getAnalytics: async () => {
+    const { data: res } =
+      await AdminClient.get<AdminAnalyticsResponse>("/admin/analytics");
+    return res;
+  },
+
+  createSector: async (sector_name: string) => {
+    const { data: res } = await AdminClient.post<SectorResponse>(
+      "/admin/sectors",
+      { sector_name },
+    );
+    return res;
+  },
+
+  createCompany: async (company_name: string, industry_id: number) => {
+    const { data: res } = await AdminClient.post<CompanyResponse>(
+      "/admin/companies",
+      { company_name, industry_id },
     );
     return res;
   },

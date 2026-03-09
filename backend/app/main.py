@@ -10,10 +10,12 @@ from .api.auth import router as auth_router
 from .api.query import router as query_router
 from .api.chat import router as chat_router
 from .api.datasets import router as dataset_router
+from .api.superadmin import router as superadmin_router
 from .core.config import get_settings
-from .db.database import engine
+from .db.database import async_session_maker, engine
 from .db.seed_data import seed_database
 from .models import Base
+from .services.user_service import UserService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -71,10 +73,18 @@ async def startup():
     # Check companies data and seed if empty (via SQLAlchemy ORM)
     await seed_database(engine)
 
+    # Ensure a single super admin exists from environment settings
+    async with async_session_maker() as session:
+        user_service = UserService(session)
+        await user_service.ensure_superadmin(
+            settings.SUPER_ADMIN_EMAIL, settings.SUPER_ADMIN_PASSWORD
+        )
+
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(query_router)
 app.include_router(admin_router, prefix="/api")
+app.include_router(superadmin_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(dataset_router, prefix="/api")
 
