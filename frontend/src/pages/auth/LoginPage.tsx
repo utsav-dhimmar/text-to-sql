@@ -30,18 +30,23 @@ export default function LoginPage() {
       try {
         console.log("Logging in:", data.email);
         const res = await AuthService.login(data);
-        
+
         // Dispatch to Redux store
-        dispatch(setCredentials({ 
-          user: res.user, 
-          token: res.access_token 
-        }));
-        
+        dispatch(
+          setCredentials({
+            user: res.user,
+            token: res.access_token,
+          }),
+        );
+
         // Redirect to dashboard (root path for now)
         navigate("/");
       } catch (err: any) {
         console.error("Login failed:", err);
-        setError(err.response?.data?.detail || "Login failed. Please check your credentials.");
+        setError(
+          err.response?.data?.detail ||
+            "Login failed. Please check your credentials.",
+        );
       }
     });
   };
@@ -90,16 +95,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            icon={<RiGithubFill className="h-5 w-5" />}
-            onClick={() => (window.location.href = "/api/auth/google/login")}
-            fullWidth={true}
-          >
-            GitHub
-          </Button>
+        <div className="mt-6 grid gap-3">
           <Button
             type="button"
             variant="outline"

@@ -91,15 +91,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            icon={<RiGithubFill className="h-5 w-5" />}
-            onClick={() => (window.location.href = "/api/auth/google/login")} // Redirect to google login
-          >
-            GitHub
-          </Button>
+        <div className="mt-6 grid gap-3">
           <Button
             type="button"
             variant="outline"
