@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -10,7 +12,11 @@ from .api.chat import router as chat_router
 from .api.datasets import router as dataset_router
 from .core.config import get_settings
 from .db.database import engine
+from .db.seed_data import seed_database
 from .models import Base
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Text-to-SQL API", version="1.0.0")
 settings = get_settings()
@@ -58,9 +64,12 @@ async def auth_middleware(request: Request, call_next):
 
 @app.on_event("startup")
 async def startup():
-    # This ensures all tables are created if they don't exist
+    # Create all tables if they don't exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Check companies data and seed if empty (via SQLAlchemy ORM)
+    await seed_database(engine)
 
 
 app.include_router(auth_router, prefix="/api")
