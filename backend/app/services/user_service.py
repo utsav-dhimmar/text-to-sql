@@ -119,3 +119,12 @@ class UserService:
         user.status = UserStatus(new_status)
         await self.db.commit()
         return True
+
+    async def delete_user(self, user_id: str) -> bool:
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+        await self.db.delete(user)
+        await self.db.commit()
+        return True

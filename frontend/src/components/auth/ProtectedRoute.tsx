@@ -3,10 +3,11 @@ import { useAppSelector } from "../../store";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  adminOnly?: boolean;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+export const ProtectedRoute = ({ children, adminOnly }: ProtectedRouteProps) => {
+  const { isAuthenticated, isLoading, user } = useAppSelector((state) => state.auth);
   const location = useLocation();
 
   if (isLoading) {
@@ -18,7 +19,12 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const redirectPath = adminOnly ? "/admin/login" : "/login";
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+  }
+
+  if (adminOnly && user?.role !== "admin" && user?.role !== "superadmin") {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
