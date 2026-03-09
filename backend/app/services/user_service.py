@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -107,7 +107,12 @@ class UserService:
         user = result.scalar_one_or_none()
         if not user:
             return False
-        user.role = UserRole(new_role)
+        target_role = UserRole(new_role)
+        if target_role == UserRole.SUPERADMIN:
+            existing = await self.get_superadmin()
+            if existing and existing.id != user.id:
+                raise ValueError("Super admin already exists.")
+        user.role = target_role
         await self.db.commit()
         return True
 
@@ -125,6 +130,60 @@ class UserService:
         user = result.scalar_one_or_none()
         if not user:
             return False
+        if user.role == UserRole.SUPERADMIN:
+            raise PermissionError("Cannot delete super admin.")
         await self.db.delete(user)
         await self.db.commit()
         return True
+
+    async def get_admins(self) -> list[User]:
+        result = await self.db.execute(
+            select(User)
+            .where(User.role == UserRole.ADMIN)
+            .order_by(User.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_superadmin(self) -> User | None:
+        result = await self.db.execute(
+            select(User).where(User.role == UserRole.SUPERADMIN)
+        )
+        return result.scalar_one_or_none()
+
+    async def count_superadmins(self) -> int:
+        result = await self.db.execute(
+            select(func.count()).select_from(User).where(User.role == UserRole.SUPERADMIN)
+        )
+        return int(result.scalar() or 0)
+
+    async def ensure_superadmin(
+        self, email: str | None, password: str | None
+    ) -> User | None:
+        if not email or not password:
+            return None
+
+        existing_superadmin = await self.get_superadmin()
+        if existing_superadmin:
+            return existing_superadmin
+
+        result = await self.db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if user:
+            user.role = UserRole.SUPERADMIN
+            user.status = UserStatus.ACTIVE
+            if not user.password_hash:
+                user.password_hash = hash_password(password)
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+
+        super_admin = User(
+            email=email,
+            password_hash=hash_password(password),
+            role=UserRole.SUPERADMIN,
+            status=UserStatus.ACTIVE,
+        )
+        self.db.add(super_admin)
+        await self.db.commit()
+        await self.db.refresh(super_admin)
+        return super_admin

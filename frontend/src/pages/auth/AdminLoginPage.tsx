@@ -47,8 +47,8 @@ export default function AdminLoginPage() {
           }),
         );
 
-        // Redirect to admin dashboard
-        navigate("/admin");
+        // Redirect to the right dashboard
+        navigate(res.user.role === "superadmin" ? "/superadmin" : "/admin");
       } catch (err: any) {
         console.error("Admin login failed:", err);
         setError(

@@ -56,3 +56,22 @@ export interface AuditLogResponse {
   target_id?: string;
   created_at: string;
 }
+
+export interface AdminAnalyticsResponse {
+  total_users: number;
+  active_users: number;
+  banned_users: number;
+  total_admins: number;
+  total_queries: number;
+}
+
+export interface SectorResponse {
+  sector_id: number;
+  sector_name: string;
+}
+
+export interface CompanyResponse {
+  company_id: number;
+  company_name: string;
+  industry_id: number;
+}

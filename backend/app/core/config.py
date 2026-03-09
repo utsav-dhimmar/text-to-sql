@@ -82,6 +82,16 @@ class Settings(BaseSettings):
         description="Frontend URL for CORS and redirects.",
     )
 
+    # Super Admin Configuration
+    SUPER_ADMIN_EMAIL: str = Field(
+        default="",
+        description="Initial Super Admin email address.",
+    )
+    SUPER_ADMIN_PASSWORD: str = Field(
+        default="",
+        description="Initial Super Admin password.",
+    )
+
     # Google OAuth Configuration
     GOOGLE_CLIENT_ID: str = Field(default="", description="Google OAuth Client ID")
     GOOGLE_CLIENT_SECRET: str = Field(

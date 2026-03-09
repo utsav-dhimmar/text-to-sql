@@ -48,7 +48,7 @@ export const ChatBox = () => {
   };
 
   return (
-    <div className="flex flex-col h-[600px] border dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-900 overflow-hidden shadow-lg mt-8">
+    <div className="flex flex-col h-150 border dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-900 overflow-hidden shadow-lg mt-8">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4">
         <div className="flex items-start justify-between gap-3">

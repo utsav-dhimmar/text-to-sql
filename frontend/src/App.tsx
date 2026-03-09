@@ -6,6 +6,7 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import Dashboard from "./pages/Dashboard";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/AdminDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { useAppSelector } from "./store";
 
@@ -39,6 +40,14 @@ function App() {
           element={
             <ProtectedRoute adminOnly>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/superadmin"
+          element={
+            <ProtectedRoute superAdminOnly>
+              <SuperAdminDashboard />
             </ProtectedRoute>
           }
         />
