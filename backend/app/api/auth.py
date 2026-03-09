@@ -129,10 +129,12 @@ async def google_login(request: Request):
     """
     Redirect the user to Google for authentication.
     """
-    redirect_uri = f"{request.base_url}api/auth/google/callback"
+    # Use the current request's base URL to build the callback URI
+    # This ensures consistency between login and callback
+    redirect_uri = str(request.url_for("google_callback"))
     
-    if settings.ENV != "development" and not str(redirect_uri).startswith("https"):
-        redirect_uri = str(redirect_uri).replace("http://", "https://")
+    if settings.ENV != "development" and not redirect_uri.startswith("https"):
+        redirect_uri = redirect_uri.replace("http://", "https://")
 
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -147,6 +149,7 @@ async def google_callback(
     Handle the callback from Google, exchange code for tokens, and log in the user.
     """
     try:
+        # Authlib will automatically use the correct redirect_uri from the request
         token = await oauth.google.authorize_access_token(request)
     except Exception as e:
         raise HTTPException(

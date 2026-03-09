@@ -18,8 +18,11 @@ settings = get_settings()
 
 # Session middleware for OAuth state
 app.add_middleware(
-    SessionMiddleware,  # ty:ignore[invalid-argument-type]
+    SessionMiddleware,
     secret_key=settings.SESSION_SECRET,
+    session_cookie="google_auth_session",
+    same_site="lax",  # Required for OAuth redirects
+    https_only=False if settings.ENV == "development" else True,
 )
 
 # CORS configuration
