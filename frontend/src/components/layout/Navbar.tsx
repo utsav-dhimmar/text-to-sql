@@ -1,4 +1,11 @@
-import { Moon, Sun, User as UserIcon, ArrowLeft, Shield } from "lucide-react";
+import {
+    Moon,
+    Sun,
+    User as UserIcon,
+    ArrowLeft,
+    Shield,
+    MessageSquare,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -53,6 +60,17 @@ export function Navbar({ title, showBackButton, titleRight }: NavbarProps) {
                 {titleRight}
             </div>
             <div className="flex gap-4 items-center">
+                {isAdmin && (
+                    <Button
+                        onClick={() => navigate("/")}
+                        variant="outline"
+                        fullWidth={false}
+                        className="flex items-center gap-2 border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400"
+                    >
+                        <MessageSquare size={18} />
+                        <span className="hidden sm:inline">Chat</span>
+                    </Button>
+                )}
                 <Button
                     onClick={handleToggleTheme}
                     variant="outline"
