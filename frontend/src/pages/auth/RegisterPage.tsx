@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RiGithubFill, RiGoogleFill } from "@remixicon/react";
+import { RiGoogleFill } from "@remixicon/react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -38,7 +38,7 @@ export default function RegisterPage() {
         console.error("Registration failed:", err);
         setError(
           err.response?.data?.detail ||
-            "Registration failed. Please try again.",
+          "Registration failed. Please try again.",
         );
       }
     });

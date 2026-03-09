@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { AuthService } from "../apis/service/auth.service";
 import { Button } from "../components/ui";
+import { ChatBox } from "../components/chat/ChatBox";
 import { useAppDispatch, useAppSelector } from "../store";
 import { logout } from "../store/slices/authSlice";
 import { toggleTheme } from "../store/slices/themeSlice";
@@ -76,6 +77,8 @@ export default function Dashboard() {
           <p>No user data found.</p>
         )}
       </div>
+
+      <ChatBox />
     </div>
   );
 }
