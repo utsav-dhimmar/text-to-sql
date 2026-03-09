@@ -25,6 +25,14 @@ class Settings(BaseSettings):
         """
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
+    @computed_field
+    @property
+    def SYNC_DATABASE_URL(self) -> str:
+        """
+        Synchronous psycopg2 connection string for AG2 tools.
+        """
+        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
     # Redis Configuration
     REDIS_URL: str = Field(
         default="redis://localhost:6379",
