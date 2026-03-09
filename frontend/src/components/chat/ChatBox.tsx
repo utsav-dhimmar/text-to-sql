@@ -150,7 +150,7 @@ export const ChatBox = () => {
                     <Button
                         type="submit"
                         disabled={loading || !inputValue.trim()}
-                        className="rounded-full w-12 h-12 flex items-center justify-center !p-0 shrink-0 shadow-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                        className="rounded-full w-12 h-12 flex items-center justify-center p-0! shrink-0 shadow-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white"
                         fullWidth={false}
                     >
                         <Send size={18} className={`${loading ? 'opacity-50' : 'opacity-100'} ml-1`} />
