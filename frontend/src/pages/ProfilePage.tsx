@@ -4,7 +4,8 @@ import { Button } from "../components/ui";
 import { useAppDispatch, useAppSelector } from "../store";
 import { setUser } from "../store/slices/authSlice";
 import { AuthService } from "../apis/service/auth.service";
-import { ArrowLeft, User, Mail, Shield, CheckCircle, Loader2 } from "lucide-react";
+import { User, Mail, Shield, CheckCircle, Loader2 } from "lucide-react";
+import { Navbar } from "../components/layout/Navbar";
 
 export default function ProfilePage() {
   const { user } = useAppSelector((state) => state.auth);
@@ -29,32 +30,23 @@ export default function ProfilePage() {
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 sm:p-8 transition-colors">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate("/")}
-              variant="outline"
-              size="icon"
-              className="rounded-full"
-              fullWidth={false}
-            >
-              <ArrowLeft size={20} />
-            </Button>
-            <h1 className="text-3xl font-bold dark:text-white">Profile</h1>
-          </div>
-          {isRefreshing && (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-8 transition-colors">
+      <Navbar
+        title="Profile"
+        showBackButton
+        titleRight={
+          isRefreshing && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Loader2 className="animate-spin" size={16} />
               Refreshing...
             </div>
-          )}
-        </div>
-
+          )
+        }
+      />
+      <div className="max-w-2xl mx-auto">
         <div className="bg-white dark:bg-gray-900 shadow-sm border dark:border-gray-800 rounded-2xl overflow-hidden transition-colors">
-          <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700"></div>
-          
+          <div className="h-32 bg-linear-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700"></div>
+
           <div className="px-6 pb-8">
             <div className="relative -mt-12 mb-6">
               <div className="inline-flex items-center justify-center p-1 bg-white dark:bg-gray-900 rounded-full border-4 border-white dark:border-gray-900 shadow-sm">
@@ -138,8 +130,8 @@ export default function ProfilePage() {
                 <p className="text-gray-500 dark:text-gray-400">
                   No user information available. Please log in again.
                 </p>
-                <Button 
-                  onClick={() => navigate("/login")} 
+                <Button
+                  onClick={() => navigate("/login")}
                   className="mt-4"
                   fullWidth={false}
                 >
