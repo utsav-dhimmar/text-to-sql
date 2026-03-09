@@ -106,9 +106,7 @@ export const ChatBox = () => {
                 if (Array.isArray(parsed) && parsed.length > 0) {
                   tableData = parsed;
                 }
-              } catch (fallbackError) {
-                // Ignore, leave tableData as null to display raw text
-              }
+              } catch (fallbackError) {}
             }
           }
 
