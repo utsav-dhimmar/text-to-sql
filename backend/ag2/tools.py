@@ -1,70 +1,70 @@
 """
-ag2/tools.py - Fixed: NSE/BSE code search + better fuzzy match
+ag2/tools.py — SQLAlchemy-based DB tools for AG2 agents
+All queries run through the synchronous SQLAlchemy engine.
 """
-import sys, os
+import sys
+import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import psycopg2, psycopg2.extras
 from rapidfuzz import process, fuzz
-from app.api.config import DB_CONFIG
+from sqlalchemy import text
 
-
-def get_connection():
-    return psycopg2.connect(**DB_CONFIG)
+from app.db.database import SyncSessionLocal
 
 
 def find_company(name: str) -> dict:
     """Search by company name OR NSE/BSE code (e.g. 'TCS', 'INFY')"""
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT company_id, company_name FROM companies")
-    rows = cur.fetchall()
-    cur.close();
-    conn.close()
+    with SyncSessionLocal() as session:
+        # Fetch all companies
+        rows = session.execute(
+            text("SELECT company_id, company_name FROM companies")
+        ).fetchall()
 
-    all_companies = {row[1]: row[0] for row in rows}
+    all_companies = {row.company_name: row.company_id for row in rows}
     names_list = list(all_companies.keys())
 
     # 1. Exact company name match
     for n in names_list:
         if n.lower() == name.lower():
-            return {"found": True, "exact": True, "company_name": n,
-                    "company_id": all_companies[n], "suggestions": []}
+            return {
+                "found": True, "exact": True, "company_name": n,
+                "company_id": all_companies[n], "suggestions": [],
+            }
 
     # 2. NSE/BSE code match — "TCS" → "Tata Consultancy Services Ltd."
-    conn2 = get_connection()
-    cur2 = conn2.cursor()
-    cur2.execute("""
-        SELECT c.company_name, c.company_id
-        FROM exchange_listings el
-        JOIN companies c ON c.company_id = el.company_id
-        WHERE UPPER(el.code) = UPPER(%s)
-        LIMIT 1
-    """, (name,))
-    code_row = cur2.fetchone()
-    cur2.close();
-    conn2.close()
+    with SyncSessionLocal() as session:
+        code_row = session.execute(
+            text("""
+                SELECT c.company_name, c.company_id
+                FROM exchange_listings el
+                JOIN companies c ON c.company_id = el.company_id
+                WHERE UPPER(el.code) = UPPER(:code)
+                LIMIT 1
+            """),
+            {"code": name},
+        ).fetchone()
 
     if code_row:
-        return {"found": True, "exact": True, "company_name": code_row[0],
-                "company_id": code_row[1], "suggestions": []}
+        return {
+            "found": True, "exact": True, "company_name": code_row.company_name,
+            "company_id": code_row.company_id, "suggestions": [],
+        }
 
     # 3. Partial name match
     name_lower = name.lower()
     partial = [n for n in names_list if name_lower in n.lower()]
     if partial:
-        return {"found": True, "exact": False, "company_name": partial[0],
-                "company_id": all_companies[partial[0]], "suggestions": partial[:5]}
+        return {
+            "found": True, "exact": False, "company_name": partial[0],
+            "company_id": all_companies[partial[0]], "suggestions": partial[:5],
+        }
 
-    # 4. Fuzzy fallback — multiple scorers combine karo
+    # 4. Fuzzy fallback — multiple scorers
     from rapidfuzz import process as rprocess
 
-    # WRatio score
     matches1 = rprocess.extract(name, names_list, scorer=fuzz.WRatio, limit=5)
-    # Partial ratio — "relayance" vs "Reliance Industries Ltd."
     matches2 = rprocess.extract(name, names_list, scorer=fuzz.partial_ratio, limit=5)
-    # Token sort — word order different ho toh bhi match
     matches3 = rprocess.extract(name, names_list, scorer=fuzz.token_sort_ratio, limit=5)
 
     # Combine scores
@@ -74,48 +74,46 @@ def find_company(name: str) -> dict:
         if cname not in score_map or score > score_map[cname]:
             score_map[cname] = score
 
-    # Threshold 60 — typos handle karo
-    suggestions = [k for k, v in sorted(score_map.items(), key=lambda x: -x[1]) if v > 60][:5]
+    suggestions = [
+        k for k, v in sorted(score_map.items(), key=lambda x: -x[1]) if v > 60
+    ][:5]
 
     if suggestions:
-        return {"found": True, "exact": False, "company_name": suggestions[0],
-                "company_id": all_companies[suggestions[0]], "suggestions": suggestions}
+        return {
+            "found": True, "exact": False, "company_name": suggestions[0],
+            "company_id": all_companies[suggestions[0]], "suggestions": suggestions,
+        }
 
-    return {"found": False, "exact": False, "company_name": None,
-            "company_id": None, "suggestions": []}
+    return {
+        "found": False, "exact": False, "company_name": None,
+        "company_id": None, "suggestions": [],
+    }
 
 
 def get_quarters() -> list:
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT quarter FROM quarterly_results ORDER BY quarter")
-    rows = cur.fetchall();
-    cur.close();
-    conn.close()
-    return [r[0] for r in rows]
+    with SyncSessionLocal() as session:
+        rows = session.execute(
+            text("SELECT DISTINCT quarter FROM quarterly_results ORDER BY quarter")
+        ).fetchall()
+    return [r.quarter for r in rows]
 
 
 def get_sectors() -> list:
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT sector_name FROM sectors ORDER BY sector_name")
-    rows = cur.fetchall();
-    cur.close();
-    conn.close()
-    return [r[0] for r in rows]
+    with SyncSessionLocal() as session:
+        rows = session.execute(
+            text("SELECT sector_name FROM sectors ORDER BY sector_name")
+        ).fetchall()
+    return [r.sector_name for r in rows]
 
 
 def run_query(sql: str) -> list:
-    conn = get_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    try:
-        cur.execute(sql)
-        return [dict(r) for r in cur.fetchall()]
-    except Exception as e:
-        return [{"error": str(e)}]
-    finally:
-        cur.close();
-        conn.close()
+    """Execute an LLM-generated SQL query via SQLAlchemy and return results as list of dicts."""
+    with SyncSessionLocal() as session:
+        try:
+            result = session.execute(text(sql))
+            return [dict(row._mapping) for row in result.fetchall()]
+        except Exception as e:
+            return [{"error": str(e)}]
 
 
 def get_schema_info() -> str:
